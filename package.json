@@ -1,0 +1,64 @@
+{
+  "name": "performance-event-timing-polyfill",
+  "version": "0.3.1",
+  "description": "Provide a polyfill for the PerformanceEventTiming interface",
+  "main": "dist/performance-event-timing-polyfill.iife.js",
+  "module": "dist/performance-event-timing-polyfill.js",
+  "unpkg": "dist/performance-event-timing-polyfill.iife.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "run-s clean build:ts build:js",
+    "build:ts": "tsc -b",
+    "build:js": "rollup -c",
+    "release:major": "npm version major -m 'Release v%s' && npm publish",
+    "release:minor": "npm version minor -m 'Release v%s' && npm publish",
+    "release:patch": "npm version patch -m 'Release v%s' && npm publish",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "dev": "run-p watch",
+    "watch": "run-p watch:*",
+    "watch:ts": "tsc -b -w",
+    "watch:js": "rollup -c -w"
+  },
+  "keywords": [
+    "crux",
+    "performance",
+    "metrics",
+    "timing",
+    "polyfill",
+    "PerformanceEventTiming",
+    "Performance Event Timing Polyfill",
+    "Core Web Vitals",
+    "INP"
+  ],
+  "author": {
+    "name": "Uxify",
+    "email": "support@uxify.com",
+    "url": "https://uxify.com/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uxify-ltd/performance-event-timing-polyfill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uxify-ltd/performance-event-timing-polyfill/issues"
+  },
+  "prettier": {
+    "arrowParens": "always",
+    "bracketSpacing": false,
+    "quoteProps": "preserve",
+    "singleQuote": true
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "prettier": "^3.1.1",
+    "rollup": "^4.9.1",
+    "typescript": "^5.3.3",
+    "npm-run-all": "^4.1.5"
+  }
+}
