@@ -59,13 +59,11 @@ const trackEvent = (evName: string) => {
     evName,
     (e) => {
       const procStart = performance.now();
-      console.log(`Event start ${e.type} at ${procStart} (${e.timeStamp})`);
 
       switch (evName) {
         case 'pointerdown':
         case 'keydown':
           activeInteractionId++;
-          //console.log("Input delay", inputDelay);
           break;
       }
 
@@ -132,8 +130,6 @@ const measurePresentationDelay = (measure: InteractionMeasure) => {
       measure.presentationDelay = diff;
       flushTimeout = setTimeout(flushMeasures, 20) as any;
       delete scheduledFrames[callFrameTime];
-
-      //console.log("Accumulating presentation delay", measure.eventType, diff, tickSource);
     });
   });
 };
@@ -166,33 +162,18 @@ const measureEventDuration = (e: Event, measure: InteractionMeasure) => {
   lastResolve && lastResolve(e);
   const evName = e.type;
   new Promise<EventEndResult>((res) => {
-    onNextTick((referenceTimeStamp: number, tickSource: string) => {
-      console.log(
-        'Measuring',
-        evName,
-        tickSource,
-        referenceTimeStamp,
-        currentFrameStart,
-        performance.now(),
-      );
+    onNextTick((referenceTimeStamp: number) => {
       res({
         evName,
         timeStamp: referenceTimeStamp,
       });
     });
-  }).then(({evName, timeStamp}) => {
+  }).then(({timeStamp}) => {
     const dur = timeStamp - measure.startTime;
     measure.duration = dur;
     measure.endTime = timeStamp;
     measure.processingDuration = dur;
     measures.push(measure);
-
-    //console.log("Promise resolved", evName);
-    //console.log("Processing time", evName, dur);
-
-    if (evName == 'click') {
-      //console.log("Total Processing time");
-    }
   });
 };
 

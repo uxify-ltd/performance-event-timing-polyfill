@@ -134,11 +134,9 @@ export const initPolyfill = () => {
         !window.forceEventTimingPolyfill &&
         hasNativeEventTimingSupport
       ) {
-        console.log('Native observe used');
         super.observe(options);
         return;
       }
-      console.log('Custom observe used');
       callbacks.push([this.#callback, this]);
 
       if (options.durationThreshold && !options.entryTypes) {
