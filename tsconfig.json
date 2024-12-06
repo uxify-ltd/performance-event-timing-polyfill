@@ -14,6 +14,7 @@
     "noImplicitReturns": true,
     "noUnusedParameters": true,
     "preserveConstEnums": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": []

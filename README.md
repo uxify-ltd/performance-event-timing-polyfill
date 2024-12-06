@@ -23,14 +23,14 @@ In order to ensure most accurate results load the script as early in your page a
 Make sure to load it before you load your code which measures INP.
 
 ```HTML
-<script src="/dist/performance-event-timing-polyfill.iife.js"></script>
+<script src="https://unpkg.com/performance-event-timing-polyfill"></script>
 ```
 
 ## Custom timing calculation
 By default the polyfill will try to emulate native [PerformanceEventTiming API](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEventTiming) entries. However internally the library is tracking the events a bit more granularly. You can subscribe to the raw event measure entries and calculate INP yourself, if you so desire (not recommended).
 
 ```JavaScript
-import { onInteraction } from '/dist/performance-event-timing-polyfill.js';
+import { onInteraction } from 'https://unpkg.com/performance-event-timing-polyfill?module';
 onInteraction(console.log);
 ```
 
