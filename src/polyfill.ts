@@ -180,6 +180,13 @@ export const initPolyfill = () => {
     PerformanceObserverPolyfill,
   ][] = [];
 
+  const roundToNearestMultipleOfEight = (num: number) => {
+    const r = num % 8;
+    const adder = 8 - r < 4 ? -(8 - r) : 8 - r;
+    num += r > 0 ? 8 - adder : 0;
+    return num;
+  };
+
   onInteraction((entries: InteractionMeasure[]) => {
     const interactions: Record<string, PerformanceEventTimingPolyfill[]> = {};
     const interactionEventsFlat = Object.values(interactionEvents).flat();
@@ -192,7 +199,10 @@ export const initPolyfill = () => {
       interactions[m.interactionId].push(
         PerformanceEventTimingPolyfill.fromObject({
           startTime: m.eventTime,
-          duration: Math.round(m.inputDelay + m.duration + m.presentationDelay),
+          //duration: Math.round(m.inputDelay + m.duration + m.presentationDelay),
+          duration: roundToNearestMultipleOfEight(
+            Math.round(m.endTime + m.presentationDelay) - m.eventTime,
+          ),
           interactionId:
             interactionEventsFlat.indexOf(m.eventType) > -1
               ? m.interactionId
@@ -206,13 +216,24 @@ export const initPolyfill = () => {
       );
     });
 
-    for (const [id, il] of Object.entries(interactions)) {
-      const lasEventEnd =
-        il[il.length - 1].startTime + il[il.length - 1].duration;
-      il.forEach((v, k) => {
-        // Adjust the durations according to the last event
-        interactions[id][k].duration = lasEventEnd - v.startTime;
-      });
+    for (const [id] of Object.entries(interactions)) {
+      //const lasEventEnd =
+      //il[il.length - 1].startTime + il[il.length - 1].duration;
+
+      //let lastEventEnd = 0;
+      //let lastInteractionId = 0;
+      //il.reverse();
+      //il.forEach((v, k) => {
+      //  if (v.interactionId != lastInteractionId) {
+      //    lastInteractionId = v.interactionId;
+      //    lastEventEnd = v.startTime + v.duration;
+      //  }
+      //  // Adjust the durations according to the last event
+      //  let dur = lastEventEnd - v.startTime;
+
+      //  interactions[id][k].duration = dur;
+      //});
+      //il.reverse();
 
       buffer.push(...interactions[id]);
     }

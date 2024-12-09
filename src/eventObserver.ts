@@ -128,7 +128,7 @@ const measurePresentationDelay = (measure: InteractionMeasure) => {
       const diff = referenceTimeStamp - startFrameTime;
       const measure = scheduledFrames[callFrameTime];
       measure.presentationDelay = diff;
-      flushTimeout = setTimeout(flushMeasures, 20) as any;
+      flushTimeout = setTimeout(flushMeasures, 100) as any;
       delete scheduledFrames[callFrameTime];
     });
   });
@@ -180,7 +180,8 @@ const measureEventDuration = (e: Event, measure: InteractionMeasure) => {
 const flushMeasures = () => {
   if (!areInteractionsComplete() && flushRetries < 5) {
     flushRetries++;
-    flushTimeout = setTimeout(flushMeasures, 20) as any;
+    clearTimeout(flushTimeout);
+    flushTimeout = setTimeout(flushMeasures, 100) as any;
     return;
   }
 
