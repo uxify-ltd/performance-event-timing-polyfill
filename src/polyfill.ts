@@ -133,13 +133,20 @@ export const initPolyfill = () => {
         options.entryTypes = undefined;
       }
 
-      if (
-        options.entryTypes &&
-        (options.entryTypes.indexOf('event') === -1 ||
-          options.entryTypes.indexOf('first-input') === -1)
-      ) {
-        super.observe(options);
-        return;
+      let nativeObserveCalled = false;
+
+      if (options.entryTypes) {
+        if (
+          options.entryTypes.some((type) => supportedTypes.indexOf(type) == -1)
+        ) {
+          super.observe(options);
+          nativeObserveCalled = true;
+        }
+        if (
+          !options.entryTypes.some((type) => supportedTypes.indexOf(type) > -1)
+        ) {
+          return;
+        }
       }
 
       if (
@@ -153,7 +160,8 @@ export const initPolyfill = () => {
       if (
         // @ts-ignore
         !window.forceEventTimingPolyfill &&
-        hasNativeEventTimingSupport
+        hasNativeEventTimingSupport &&
+        !nativeObserveCalled
       ) {
         super.observe(options);
         return;
@@ -255,29 +263,9 @@ export const initPolyfill = () => {
       );
     });
 
-    for (const [id] of Object.entries(interactions)) {
-      //const lasEventEnd =
-      //il[il.length - 1].startTime + il[il.length - 1].duration;
-
-      //let lastEventEnd = 0;
-      //let lastInteractionId = 0;
-      //il.reverse();
-      //il.forEach((v, k) => {
-      //  if (v.interactionId != lastInteractionId) {
-      //    lastInteractionId = v.interactionId;
-      //    lastEventEnd = v.startTime + v.duration;
-      //  }
-      //  // Adjust the durations according to the last event
-      //  let dur = lastEventEnd - v.startTime;
-
-      //  interactions[id][k].duration = dur;
-      //});
-      //il.reverse();
-
-      buffer.push(...interactions[id]);
-    }
-
     const interactionsListFlat = Object.values(interactions).flat();
+
+    buffer.push(...interactionsListFlat);
 
     for (const [callback, observer] of callbacks) {
       const interactionsList = new PerformanceObserverEntryListPolyfill(
