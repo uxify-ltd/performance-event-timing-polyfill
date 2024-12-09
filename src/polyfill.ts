@@ -89,7 +89,7 @@ export const initPolyfill = () => {
 
     constructor(entries: PerformanceEventTiming[], threshold?: number) {
       this.#entries = entries.filter(
-        (entry) => entry.duration >= (threshold || 0),
+        (entry) => entry.duration >= (threshold || 16),
       );
     }
 
@@ -139,7 +139,7 @@ export const initPolyfill = () => {
       }
       callbacks.push([this.#callback, this]);
 
-      if (options.durationThreshold && !options.entryTypes) {
+      if (options.durationThreshold != undefined && !options.entryTypes) {
         this.threshold = Math.max(options.durationThreshold, 16);
       }
 
