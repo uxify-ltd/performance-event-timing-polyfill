@@ -248,7 +248,8 @@ export const initPolyfill = () => {
           startTime: m.eventTime,
           //duration: Math.round(m.inputDelay + m.duration + m.presentationDelay),
           duration: roundToNearestMultipleOfEight(
-            Math.round(m.endTime + m.presentationDelay) - m.eventTime,
+            //Math.round(m.endTime + m.presentationDelay - m.eventTime),
+            Math.round(m.paintEnd - m.eventTime),
           ),
           interactionId:
             interactionEventsFlat.indexOf(m.eventType) > -1
