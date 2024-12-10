@@ -20,6 +20,8 @@ import {
   PerformanceObserverInitPolyfill,
 } from './types';
 
+let firstInteraction: PerformanceEventTiming | null = null;
+const supportedTypes: string[] = ['event', 'first-input'];
 const hasNativeEventTimingSupport =
   'PerformanceEventTiming' in self &&
   'interactionId' in PerformanceEventTiming.prototype;
@@ -89,7 +91,7 @@ export const initPolyfill = () => {
 
     constructor(entries: PerformanceEventTiming[], threshold?: number) {
       this.#entries = entries.filter(
-        (entry) => entry.duration >= (threshold || 0),
+        (entry) => entry.duration >= (threshold || 16),
       );
     }
 
@@ -122,8 +124,34 @@ export const initPolyfill = () => {
 
     observe(options: PerformanceObserverInitPolyfill) {
       if (
-        options.type?.toLowerCase() !== 'event' &&
-        (!options.entryTypes || options.entryTypes.indexOf('event') === -1)
+        options.entryTypes != undefined &&
+        (options.durationThreshold != undefined ||
+          options.buffered != undefined ||
+          options.type != undefined)
+      ) {
+        // Not allowed so we just ignore the options
+        options.entryTypes = undefined;
+      }
+
+      let nativeObserveCalled = false;
+
+      if (options.entryTypes) {
+        if (
+          options.entryTypes.some((type) => supportedTypes.indexOf(type) == -1)
+        ) {
+          super.observe(options);
+          nativeObserveCalled = true;
+        }
+        if (
+          !options.entryTypes.some((type) => supportedTypes.indexOf(type) > -1)
+        ) {
+          return;
+        }
+      }
+
+      if (
+        !options.type ||
+        supportedTypes.indexOf(options.type.toLowerCase()) == -1
       ) {
         super.observe(options);
         return;
@@ -132,18 +160,33 @@ export const initPolyfill = () => {
       if (
         // @ts-ignore
         !window.forceEventTimingPolyfill &&
-        hasNativeEventTimingSupport
+        hasNativeEventTimingSupport &&
+        !nativeObserveCalled
       ) {
         super.observe(options);
         return;
       }
+
       callbacks.push([this.#callback, this]);
 
-      if (options.durationThreshold && !options.entryTypes) {
+      if (options.durationThreshold != undefined && !options.entryTypes) {
         this.threshold = Math.max(options.durationThreshold, 16);
       }
 
-      if (options.buffered) {
+      if (options.buffered && !options.entryTypes) {
+        if (options.type == 'first-input') {
+          if (firstInteraction) {
+            this.#callback(
+              new PerformanceObserverEntryListPolyfill(
+                [firstInteraction],
+                this.threshold,
+              ),
+              this,
+            );
+          }
+          return;
+        }
+
         this.#callback(
           new PerformanceObserverEntryListPolyfill(buffer, this.threshold),
           this,
@@ -164,7 +207,11 @@ export const initPolyfill = () => {
         PerformanceObserverPolyfill.#types = Array.from(
           PerformanceObserverPolyfill.#nativePO.supportedEntryTypes,
         );
-        PerformanceObserverPolyfill.#types.push('event');
+
+        if (PerformanceObserverPolyfill.#types.indexOf('event') == -1) {
+          PerformanceObserverPolyfill.#types.push('event');
+          PerformanceObserverPolyfill.#types.push('first-input');
+        }
       }
 
       return PerformanceObserverPolyfill.#types;
@@ -180,6 +227,13 @@ export const initPolyfill = () => {
     PerformanceObserverPolyfill,
   ][] = [];
 
+  const roundToNearestMultipleOfEight = (num: number) => {
+    const r = num % 8;
+    const adder = 8 - r < 4 ? -(8 - r) : 8 - r;
+    num += r > 0 ? 8 - adder : 0;
+    return num;
+  };
+
   onInteraction((entries: InteractionMeasure[]) => {
     const interactions: Record<string, PerformanceEventTimingPolyfill[]> = {};
     const interactionEventsFlat = Object.values(interactionEvents).flat();
@@ -192,7 +246,11 @@ export const initPolyfill = () => {
       interactions[m.interactionId].push(
         PerformanceEventTimingPolyfill.fromObject({
           startTime: m.eventTime,
-          duration: Math.round(m.inputDelay + m.duration + m.presentationDelay),
+          //duration: Math.round(m.inputDelay + m.duration + m.presentationDelay),
+          duration: roundToNearestMultipleOfEight(
+            //Math.round(m.endTime + m.presentationDelay - m.eventTime),
+            Math.round(m.paintEnd - m.eventTime),
+          ),
           interactionId:
             interactionEventsFlat.indexOf(m.eventType) > -1
               ? m.interactionId
@@ -206,26 +264,40 @@ export const initPolyfill = () => {
       );
     });
 
-    for (const [id, il] of Object.entries(interactions)) {
-      const lasEventEnd =
-        il[il.length - 1].startTime + il[il.length - 1].duration;
-      il.forEach((v, k) => {
-        // Adjust the durations according to the last event
-        interactions[id][k].duration = lasEventEnd - v.startTime;
-      });
+    const interactionsListFlat = Object.values(interactions).flat();
 
-      buffer.push(...interactions[id]);
+    buffer.push(...interactionsListFlat);
+
+    for (const [callback, observer] of callbacks) {
+      const interactionsList = new PerformanceObserverEntryListPolyfill(
+        interactionsListFlat,
+        observer.threshold,
+      );
+
+      if (!interactionsList.getEntries().length) {
+        continue;
+      }
+
+      callback(interactionsList, observer);
     }
 
-    const interactionsListFlat = Object.values(interactions).flat();
-    for (const [callback, observer] of callbacks) {
-      callback(
-        new PerformanceObserverEntryListPolyfill(
-          interactionsListFlat,
+    if (!firstInteraction && buffer.length) {
+      const fi = JSON.parse(buffer[0].toJSON());
+      fi.entryType = 'first-input';
+      firstInteraction = PerformanceEventTimingPolyfill.fromObject(fi);
+
+      for (const [callback, observer] of callbacks) {
+        const interactionsList = new PerformanceObserverEntryListPolyfill(
+          [firstInteraction],
           observer.threshold,
-        ),
-        observer,
-      );
+        );
+
+        if (!interactionsList.getEntries().length) {
+          continue;
+        }
+
+        callback(interactionsList, observer);
+      }
     }
   });
 };

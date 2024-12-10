@@ -18,4 +18,5 @@ import {initPolyfill} from './polyfill';
 initPolyfill();
 
 export {onInteraction} from './eventObserver';
+export {initPolyfill} from './polyfill';
 export * from './types';

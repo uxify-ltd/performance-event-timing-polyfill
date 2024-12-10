@@ -21,7 +21,7 @@ export const interactionEvents = {
 };
 
 const interactionCallbacks: ((entries: InteractionMeasure[]) => void)[] = [];
-const scheduledFrames: Record<number, InteractionMeasure> = {};
+const scheduledFrames: Record<number, InteractionMeasure[]> = {};
 const chan = new MessageChannel();
 const events = [
   'pointerdown',
@@ -74,6 +74,7 @@ const trackEvent = (evName: string) => {
         eventType: e.type, // name
         eventTime: e.timeStamp, //startTime
         interactionId: activeInteractionId,
+        paintEnd: 0,
 
         endTime: 0,
         inputDelay: procStart - e.timeStamp,
@@ -118,7 +119,10 @@ const measurePresentationDelay = (measure: InteractionMeasure) => {
   clearTimeout(flushTimeout);
   flushRetries = 0;
   const rafExists = scheduledFrames[currentFrameStart];
-  scheduledFrames[currentFrameStart] = measure;
+  if (!rafExists) {
+    scheduledFrames[currentFrameStart] = [];
+  }
+  scheduledFrames[currentFrameStart].push(measure);
   if (rafExists) return;
   const callFrameTime = currentFrameStart;
 
@@ -126,9 +130,11 @@ const measurePresentationDelay = (measure: InteractionMeasure) => {
     const startFrameTime = currentFrameStart;
     onNextTick((referenceTimeStamp: number) => {
       const diff = referenceTimeStamp - startFrameTime;
-      const measure = scheduledFrames[callFrameTime];
-      measure.presentationDelay = diff;
-      flushTimeout = setTimeout(flushMeasures, 20) as any;
+      scheduledFrames[callFrameTime].forEach((measure) => {
+        measure.presentationDelay = diff;
+        measure.paintEnd = referenceTimeStamp;
+      });
+      flushTimeout = setTimeout(flushMeasures, 100) as any;
       delete scheduledFrames[callFrameTime];
     });
   });
@@ -180,7 +186,8 @@ const measureEventDuration = (e: Event, measure: InteractionMeasure) => {
 const flushMeasures = () => {
   if (!areInteractionsComplete() && flushRetries < 5) {
     flushRetries++;
-    flushTimeout = setTimeout(flushMeasures, 20) as any;
+    clearTimeout(flushTimeout);
+    flushTimeout = setTimeout(flushMeasures, 100) as any;
     return;
   }
 

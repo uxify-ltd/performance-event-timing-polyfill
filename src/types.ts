@@ -29,6 +29,7 @@ export type InteractionMeasure = {
   eventType: string;
   eventTime: number;
   interactionId: number;
+  paintEnd: number;
 };
 
 export type PerformanceEventTimingInitPolyfill = {
