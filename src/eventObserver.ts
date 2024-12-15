@@ -20,6 +20,14 @@ export const interactionEvents = {
   keyboard: ['keydown', 'keyup'],
 };
 
+const interactionLastEvents: string[] = [
+  'click',
+  'auxclick',
+  'keyup',
+  'pointercancel',
+  'contextmenu',
+];
+
 const interactionCallbacks: ((entries: InteractionMeasure[]) => void)[] = [];
 const scheduledFrames: Record<number, InteractionMeasure[]> = {};
 const chan = new MessageChannel();
@@ -29,12 +37,16 @@ const events = [
   'pointerup',
   'mouseup',
   'click',
+  'auxclick',
+  'contextmenu',
+  'pointercancel',
   'keydown',
   'keypress',
   'keyup',
 ];
 const preferNativeTimes = false; //Using native timestamps leads to weird results (e.g. negative processing times). Need to figure out why
 const storedCallbacks: {[key: number]: Function} = {};
+const flushedInteractions: Set<number> = new Set();
 
 let isInitialized = false;
 let flushTimeout: number = 0;
@@ -43,7 +55,6 @@ let activeInteractionId: number = 0;
 let callbackIdCounter: number = 0;
 let lastResolve: ((e: Event) => void) | null = null;
 let currentFrameStart = performance.now();
-let flushRetries = 0;
 
 export const onInteraction = (cb: (entries: InteractionMeasure[]) => void) => {
   interactionCallbacks.push(cb);
@@ -65,6 +76,13 @@ const trackEvent = (evName: string) => {
         case 'keydown':
           activeInteractionId++;
           break;
+      }
+
+      if (flushedInteractions.has(activeInteractionId)) {
+        // Pointercancel can occur before contextmenu for example
+        // in which case the interaction measures might be flushed early.
+        // For these cases we should ignore events received after the flush (contextmenu after pointercancel)
+        return;
       }
 
       const measure = {
@@ -94,30 +112,28 @@ const frameLogger = () => {
   requestAnimationFrame(frameLogger);
 };
 
-const areInteractionsComplete = () => {
-  if (!measures.length) return true;
+const getCompleteInteractionMeasures = (): InteractionMeasure[] => {
+  if (!measures.length) return [];
 
-  const groupedInteractions: Record<number, string[]> = {};
+  const groupedInteractions: Record<number, InteractionMeasure[]> = {};
   measures.forEach((m) => {
     if (!groupedInteractions[m.interactionId]) {
       groupedInteractions[m.interactionId] = [];
     }
-    groupedInteractions[m.interactionId].push(m.eventType);
+    groupedInteractions[m.interactionId].push(m);
   });
 
-  return Object.values(groupedInteractions).every((events) => {
-    return (
-      events.filter((e) => interactionEvents.pointer.includes(e)).length ==
-        interactionEvents.pointer.length ||
-      events.filter((e) => interactionEvents.keyboard.includes(e)).length ==
-        interactionEvents.keyboard.length
-    );
-  });
+  return Object.values(groupedInteractions)
+    .filter(
+      (measures: InteractionMeasure[]) =>
+        measures[measures.length - 1].paintEnd > 0 &&
+        interactionLastEvents.includes(measures[measures.length - 1].eventType),
+    )
+    .flat();
 };
 
 const measurePresentationDelay = (measure: InteractionMeasure) => {
   clearTimeout(flushTimeout);
-  flushRetries = 0;
   const rafExists = scheduledFrames[currentFrameStart];
   if (!rafExists) {
     scheduledFrames[currentFrameStart] = [];
@@ -134,7 +150,7 @@ const measurePresentationDelay = (measure: InteractionMeasure) => {
         measure.presentationDelay = diff;
         measure.paintEnd = referenceTimeStamp;
       });
-      flushTimeout = setTimeout(flushMeasures, 100) as any;
+      flushTimeout = setTimeout(flushMeasures, 20) as any;
       delete scheduledFrames[callFrameTime];
     });
   });
@@ -184,19 +200,20 @@ const measureEventDuration = (e: Event, measure: InteractionMeasure) => {
 };
 
 const flushMeasures = () => {
-  if (!areInteractionsComplete() && flushRetries < 5) {
-    flushRetries++;
-    clearTimeout(flushTimeout);
-    flushTimeout = setTimeout(flushMeasures, 100) as any;
-    return;
-  }
+  if (!measures.length) return;
+
+  const completeInteractionMeasures = getCompleteInteractionMeasures();
+
+  if (!completeInteractionMeasures.length) return;
 
   interactionCallbacks.forEach((cb) => {
-    cb(measures);
+    cb(completeInteractionMeasures);
   });
 
-  measures = [];
-  flushRetries = 0;
+  for (const m of completeInteractionMeasures) {
+    flushedInteractions.add(m.interactionId);
+    measures.splice(measures.indexOf(m), 1);
+  }
 };
 
 export const initObserver = () => {
