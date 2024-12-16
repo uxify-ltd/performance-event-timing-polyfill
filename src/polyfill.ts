@@ -52,6 +52,7 @@ export const initPolyfill = () => {
     processingStart!: number;
     target!: Node | null;
     toJSON!: () => string;
+    intoFirstInputEntry!: () => PerformanceEventTimingPolyfill;
 
     //constructor(init: PerformanceEventTimingInitPolyfill) {
     //  Object.assign(this, init);
@@ -81,6 +82,18 @@ export const initPolyfill = () => {
       result[key] = (this as any)[key];
     }
     return JSON.stringify(result);
+  };
+
+  PerformanceEventTimingPolyfill.prototype.intoFirstInputEntry = function () {
+    const clone: Record<string, any> = {};
+    for (const key of Object.keys(this)) {
+      clone[key] = (this as any)[key];
+    }
+
+    clone.entryType = 'first-input';
+    return PerformanceEventTimingPolyfill.fromObject(
+      clone as PerformanceEventTimingInitPolyfill,
+    );
   };
 
   (self as typeof globalThis).PerformanceEventTiming =
@@ -282,9 +295,9 @@ export const initPolyfill = () => {
     }
 
     if (!firstInteraction && buffer.length) {
-      const fi = JSON.parse(buffer[0].toJSON());
-      fi.entryType = 'first-input';
-      firstInteraction = PerformanceEventTimingPolyfill.fromObject(fi);
+      firstInteraction = (
+        buffer[0] as PerformanceEventTimingPolyfill
+      ).intoFirstInputEntry();
 
       for (const [callback, observer] of callbacks) {
         const interactionsList = new PerformanceObserverEntryListPolyfill(
