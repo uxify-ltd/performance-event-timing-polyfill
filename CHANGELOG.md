@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.5.1 (2024-12-16)
+
+ - Avoid JSON encode -> decode when cloning the first input entry. Resolves issues with cyclic references.
+
 ### v0.5.0 (2024-12-16)
 
  - Improve accuracy by handling the following additional events: `auxclick`, `contextmenu`, `pointercancel`
