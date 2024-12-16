@@ -15,6 +15,10 @@ Reality is that other browsers like Safari and Firefox exist and in some cases t
 
 Using this library you can get INP data for all browsers and ensure great user experience for everybody :tada:
 
+# Demo
+
+You can test how the polyfill works on this modified version of the popular [INP demo](https://uxify-ltd.github.io/performance-event-timing-polyfill/demos/inp-demo.html) page.
+
 # Usage
 
 ## Basic usage
@@ -39,10 +43,6 @@ onInteraction(console.log);
 All major browsers are supported. For Chrome, the polyfill doesn't activate by default since this API is provided natively. But the event observer is still active. This means you can still use `onInteraction()` from this library which could be useful if you need apples to apples comparisons across browsers.
 
 # Caveats
-
-## Duration rounding
-
-The event durations are not rounded to the nearest 8ms yet
  
 ## Overlapping interactions
 
@@ -53,7 +53,8 @@ When there are overlapping interactions, attribution comes out a bit off current
 Data may be off if this polyfill is not loaded early enough in the page lifecycle. Ideally it should be loaded before any event listeners are registered and before any performance observers are created. This is needed to ensure that the event handlers added by this library are the first to execute. Otherwise calls to `stopImmediatePropagation()` can prevent the library from detecting an event.
 
 ## Not all events are measured
-Only `pointerdown`, `mousedown`, `pointerup`, `mouseup`, `click`, `keydown`, `keypress`, `keyup` are measured for now.
+
+Only `pointerdown`, `mousedown`, `pointerup`, `mouseup`, `pointercancel`, `click`, `auxclick`, `contextmenu`, `keydown`, `keypress`, `keyup` are measured for now.
 
 # Development
 
