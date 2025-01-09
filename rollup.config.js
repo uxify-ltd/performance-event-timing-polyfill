@@ -27,6 +27,7 @@ const configurePlugins = ({module}) => {
 
 const configs = [
   {
+    context: 'this',
     input: 'dist/modules/index.js',
     output: {
       format: 'esm',
@@ -35,6 +36,7 @@ const configs = [
     plugins: configurePlugins({module: true}),
   },
   {
+    context: 'this',
     input: 'dist/modules/index.js',
     output: {
       format: 'umd',
@@ -44,6 +46,7 @@ const configs = [
     plugins: configurePlugins({module: true}),
   },
   {
+    context: 'this',
     input: 'dist/modules/index.js',
     output: {
       format: 'iife',
