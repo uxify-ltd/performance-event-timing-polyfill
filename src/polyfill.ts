@@ -13,12 +13,16 @@
  limitations under the License.
 */
 
-import {initObserver, onInteraction, interactionEvents} from './eventObserver';
+import {
+  initObserver,
+  onInteraction,
+  interactionEvents,
+} from './eventObserver.js';
 import {
   InteractionMeasure,
   PerformanceEventTimingInitPolyfill,
   PerformanceObserverInitPolyfill,
-} from './types';
+} from './types.js';
 
 let firstInteraction: PerformanceEventTiming | null = null;
 const supportedTypes: string[] = ['event', 'first-input'];
