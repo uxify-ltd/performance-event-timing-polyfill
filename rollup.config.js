@@ -37,6 +37,15 @@ const configs = [
   {
     input: 'dist/modules/index.js',
     output: {
+      format: 'umd',
+      file: './dist/performance-event-timing-polyfill.umd.cjs',
+      name: 'performanceEventTimingPolyfill',
+    },
+    plugins: configurePlugins({module: true}),
+  },
+  {
+    input: 'dist/modules/index.js',
+    output: {
       format: 'iife',
       file: './dist/performance-event-timing-polyfill.iife.js',
       name: 'performanceEventTimingPolyfill',
