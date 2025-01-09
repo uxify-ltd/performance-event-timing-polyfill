@@ -13,7 +13,7 @@
  limitations under the License.
 */
 
-import {EventEndResult, InteractionMeasure} from './types';
+import {EventEndResult, InteractionMeasure} from './types.js';
 
 export const interactionEvents = {
   pointer: ['pointerdown', 'pointerup', 'click'],

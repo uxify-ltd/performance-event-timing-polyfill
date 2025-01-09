@@ -2,6 +2,7 @@
   "name": "performance-event-timing-polyfill",
   "version": "0.5.1",
   "description": "Provide a polyfill for the PerformanceEventTiming interface",
+  "type": "module",
   "main": "dist/performance-event-timing-polyfill.iife.js",
   "module": "dist/performance-event-timing-polyfill.js",
   "unpkg": "dist/performance-event-timing-polyfill.iife.js",

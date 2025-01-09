@@ -13,10 +13,10 @@
  limitations under the License.
 */
 
-import {initPolyfill} from './polyfill';
+import {initPolyfill} from './polyfill.js';
 
 initPolyfill();
 
-export {onInteraction} from './eventObserver';
-export {initPolyfill} from './polyfill';
-export * from './types';
+export {onInteraction} from './eventObserver.js';
+export {initPolyfill} from './polyfill.js';
+export * from './types.js';
