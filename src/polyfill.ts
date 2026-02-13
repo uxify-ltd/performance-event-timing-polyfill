@@ -31,8 +31,6 @@ const hasNativeEventTimingSupport =
   'interactionId' in PerformanceEventTiming.prototype;
 
 export const initPolyfill = () => {
-  initObserver();
-
   if (!('PerformanceObserver' in self)) {
     return;
   }
@@ -44,6 +42,8 @@ export const initPolyfill = () => {
   ) {
     return;
   }
+
+  initObserver();
 
   class PerformanceEventTimingPolyfill {
     startTime!: number;
